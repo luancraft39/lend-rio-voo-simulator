@@ -78,13 +78,13 @@ SPD: <span id="spd">0</span>
 
 <div id="mobileControls">
 <div>
-<button class="mobileBtn" ontouchstart="keys['w']=true" ontouchend="keys['w']=false">?</button>
+<button class="mobileBtn" ontouchstart="keys['w']=true" ontouchend="keys['w']=false">▲</button>
 </div>
 
 <div>
-<button class="mobileBtn" ontouchstart="keys['a']=true" ontouchend="keys['a']=false">?</button>
-<button class="mobileBtn" ontouchstart="keys['s']=true" ontouchend="keys['s']=false">?</button>
-<button class="mobileBtn" ontouchstart="keys['d']=true" ontouchend="keys['d']=false">?</button>
+<button class="mobileBtn" ontouchstart="keys['a']=true" ontouchend="keys['a']=false">◀</button>
+<button class="mobileBtn" ontouchstart="keys['s']=true" ontouchend="keys['s']=false">▼</button>
+<button class="mobileBtn" ontouchstart="keys['d']=true" ontouchend="keys['d']=false">▶</button>
 </div>
 </div>
 
@@ -109,7 +109,6 @@ let terrainSize=600;
 let chunks={};
 let villages={};
 let npcs=[];
-let cars=[];
 
 let isMobile='ontouchstart' in window;
 let dragging=false;
@@ -121,7 +120,6 @@ function startGame(){
 document.getElementById("menu").style.display="none";
 document.getElementById("hud").style.display="block";
 
-/* MUSICA */
 music = new Audio("https://files.catbox.moe/7kdya6.mp3");
 music.loop = true;
 music.volume = 0.6;
@@ -198,6 +196,22 @@ new THREE.MeshLambertMaterial({color:0xff0000})
 
 plane.add(wing);
 
+/* ASAS EXTRAS */
+
+let wingLeft=new THREE.Mesh(
+new THREE.BoxGeometry(40,2,12),
+new THREE.MeshLambertMaterial({color:0xff0000})
+);
+wingLeft.position.set(0,0,-16);
+plane.add(wingLeft);
+
+let wingRight=new THREE.Mesh(
+new THREE.BoxGeometry(40,2,12),
+new THREE.MeshLambertMaterial({color:0xff0000})
+);
+wingRight.position.set(0,0,16);
+plane.add(wingRight);
+
 plane.position.set(0,300,0);
 
 scene.add(plane);
@@ -226,10 +240,78 @@ opacity:0.8
 });
 
 let water=new THREE.Mesh(geo,mat);
-
 water.position.set(cx*terrainSize,-19,cz*terrainSize);
 
 scene.add(water);
+}
+
+function createHouse(x,z){
+
+let house=new THREE.Group();
+
+let walls=new THREE.Mesh(
+new THREE.BoxGeometry(40,25,40),
+new THREE.MeshLambertMaterial({color:0xffffff})
+);
+walls.position.y=12;
+house.add(walls);
+
+let roof=new THREE.Mesh(
+new THREE.ConeGeometry(30,20,4),
+new THREE.MeshLambertMaterial({color:0xaa0000})
+);
+roof.position.y=35;
+roof.rotation.y=Math.PI/4;
+house.add(roof);
+
+let door=new THREE.Mesh(
+new THREE.BoxGeometry(8,14,1),
+new THREE.MeshLambertMaterial({color:0x663300})
+);
+door.position.set(0,7,20.5);
+house.add(door);
+
+house.position.set(x,getHeight(x,z),z);
+
+scene.add(house);
+}
+
+function createNPC(x,z){
+
+let tex=new THREE.TextureLoader().load(
+"https://threejs.org/examples/textures/sprite.png"
+);
+
+let npc=new THREE.Mesh(
+new THREE.PlaneGeometry(10,20),
+new THREE.MeshLambertMaterial({
+map:tex,
+transparent:true
+})
+);
+
+npc.position.set(x,getHeight(x,z)+10,z);
+
+scene.add(npc);
+npcs.push(npc);
+}
+
+function createVillage(cx,cz){
+
+let key=cx+","+cz;
+if(villages[key])return;
+
+for(let i=0;i<5;i++){
+
+let x=cx*terrainSize+Math.random()*300-150;
+let z=cz*terrainSize+Math.random()*300-150;
+
+createHouse(x,z);
+createNPC(x+10,z+10);
+
+}
+
+villages[key]=true;
 }
 
 function createChunk(cx,cz){
@@ -295,8 +377,10 @@ let cx=Math.floor(plane.position.x/terrainSize);
 let cz=Math.floor(plane.position.z/terrainSize);
 
 for(let x=-1;x<=1;x++)
-for(let z=-1;z<=1;z++)
+for(let z=-1;z<=1;z++){
 createChunk(cx+x,cz+z);
+createVillage(cx+x,cz+z);
+}
 
 document.getElementById("spd").innerText=speed;
 
